@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Esp32")(type "KiCad")(uri "${KIPRJMOD}/lib/ESP32/symbols/Espressif.kicad_sym")(options "")(descr ""))
+  (lib (name "IM920")(type "KiCad")(uri "${KIPRJMOD}/lib/IM920/IM920.kicad_sym")(options "")(descr ""))
+)
