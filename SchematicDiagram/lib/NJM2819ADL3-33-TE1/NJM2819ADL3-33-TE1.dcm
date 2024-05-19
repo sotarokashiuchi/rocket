@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP NJM2819ADL3-33-TE1
+D IC REG LINEAR 3.3V 2A TO252-5
+K
+F https://www.njr.com/electronic_device/PDF/NJM2819A_E.pdf
+$ENDCMP
+#
+#End Doc Library
