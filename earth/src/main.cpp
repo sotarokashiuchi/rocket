@@ -9,22 +9,31 @@
 
 // put function declarations here:
 int myFunction(int, int);
+int LED = 22;
 
 void setup() {
-  // put your setup code here, to run once:
-  IPAddress agent_ip(192, 168, 1, 113);
-  size_t agent_port = 8888;
+  // analogSetAttenuation(ADC_0db);
+  // // put your setup code here, to run once:
+  // IPAddress agent_ip(192, 168, 1, 113);
+  // size_t agent_port = 8888;
 
-  char ssid[] = "WIFI_SSID";
-  char psk[]= "WIFI_PSK";
+  // char ssid[] = "WIFI_SSID";
+  // char psk[]= "WIFI_PSK";
 
-  set_microros_wifi_transports(ssid, psk, agent_ip, agent_port);
+  // set_microros_wifi_transports(ssid, psk, agent_ip, agent_port);
+  // // set_microros_wifi_transports() の定義部分で、wifi.begin()の部分をソフトウェアAPに変更すればよさそう
 
   int result = myFunction(2, 3);
+  pinMode(LED, OUTPUT);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+
+  digitalWrite(LED, HIGH);
+  delay(1000);
+  digitalWrite(LED, LOW);
+  delay(1000);
 }
 
 // put function definitions here:
