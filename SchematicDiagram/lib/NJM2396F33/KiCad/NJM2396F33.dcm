@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP NJM2396F33
+D LOW DROPOUT VOLTAGE REGULATOR WITH ON/OFF CONTROL
+K
+F https://datasheet.datasheetarchive.com/originals/distributors/Datasheets-27/DSA-536684.pdf
+$ENDCMP
+#
+#End Doc Library
