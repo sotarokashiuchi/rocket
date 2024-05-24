@@ -21,15 +21,16 @@ void setup() {
   WiFi.config(
     IPAddress(10, 42, 0, 101),      // IPaddress
     IPAddress(10, 42, 0, 1),        // Gateway
-    IPAddress(255, 255, 255, 255),  // Subnet
-    IPAddress(8,8,8,8)              // DNS
+    IPAddress(255, 255, 255, 255)   // Subnet
   );
-  WiFi.begin("ESP32", "Password12345678");
-  while(WiFi.status() != WL_CONNECTED){
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("Connected!");
+  set_microros_wifi_transports(
+    "ESP32",
+    "Password12345678",
+    IPAddress(10, 42, 0, 1),
+    8888
+  );
+  Serial.println("WiFi Connected!!");
+
 }
 
 void loop() {
