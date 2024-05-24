@@ -6,37 +6,35 @@
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
+#include <WiFi.h>
 
-// put function declarations here:
-int myFunction(int, int);
-int LED = 22;
+#define LED_BLUE 22
 
 void setup() {
-  // analogSetAttenuation(ADC_0db);
-  // // put your setup code here, to run once:
-  // IPAddress agent_ip(192, 168, 1, 113);
-  // size_t agent_port = 8888;
+  // Serial
+  Serial.begin(115200);
 
-  // char ssid[] = "WIFI_SSID";
-  // char psk[]= "WIFI_PSK";
+  // PinMode setting
+  pinMode(LED_BLUE, OUTPUT);
 
-  // set_microros_wifi_transports(ssid, psk, agent_ip, agent_port);
-  // // set_microros_wifi_transports() の定義部分で、wifi.begin()の部分をソフトウェアAPに変更すればよさそう
-
-  int result = myFunction(2, 3);
-  pinMode(LED, OUTPUT);
+  // WiFi setting
+  WiFi.config(
+    IPAddress(10, 42, 0, 101),      // IPaddress
+    IPAddress(10, 42, 0, 1),        // Gateway
+    IPAddress(255, 255, 255, 255),  // Subnet
+    IPAddress(8,8,8,8)              // DNS
+  );
+  WiFi.begin("ESP32", "Password12345678");
+  while(WiFi.status() != WL_CONNECTED){
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected!");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-  digitalWrite(LED, HIGH);
+  digitalWrite(LED_BLUE, HIGH);
   delay(1000);
-  digitalWrite(LED, LOW);
+  digitalWrite(LED_BLUE, LOW);
   delay(1000);
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
 }
