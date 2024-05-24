@@ -54,8 +54,8 @@ void setup() {
 }
 
 void loop() {
-  // Serial.println("Hi");
-  // delay(500);
+  Serial.println("RDID");
+  delay(500);
 
   while(Serial.available()){
     Serial.println(Serial.readStringUntil('\n'));
