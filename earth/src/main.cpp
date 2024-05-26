@@ -9,11 +9,19 @@
 #include <WiFi.h>
 #include <SoftwareSerial.h>
 #include <std_msgs/msg/int32.h>
-
 #include <ESP32Ping.h>
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT) && !defined(ARDUINO_WIO_TERMINAL)
 #error This example is only avaible for Arduino Portenta, Arduino Nano RP2040 Connect, ESP32 Dev module and Wio Terminal
+#endif
+
+// #define DEBUG_MODE
+#if defined(DEBUG_MODE)
+  #define DEBUG_PRINT(str) (PCSerial.print(str))
+  #define DEBUG_PRINTLN(str) (PCSerial.println(str))
+#else
+  #define DEBUG_PRINT(str)
+  #define DEBUG_PRINTLN(str)
 #endif
 
 #define LED_BLUE 22
@@ -27,7 +35,6 @@
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
 rclc_executor_t executor;
-// rcl_init_options_t init_options;
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
@@ -65,7 +72,8 @@ void setup() {
   pinMode(LED_BLUE, OUTPUT);
   analogSetAttenuation(ADC_0db);
 
-  PCSerial.println("[Starting]:Setting");
+  DEBUG_PRINTLN("");
+  DEBUG_PRINTLN("[Starting]:Setting");
   // WiFi setting
   WiFi.config(
     IPAddress(10, 42, 0, 101),      // IPaddress
@@ -78,15 +86,16 @@ void setup() {
     IPAddress(10, 42, 0, 1),
     2000
   );
-  PCSerial.println("[Finished]:WiFi Connected!!");
-  PCSerial.println(WiFi.localIP());
+  DEBUG_PRINTLN("[Finished]:WiFi Connected!!");
+  DEBUG_PRINT("[Info]:Local IPaddress is ");
+  DEBUG_PRINTLN(WiFi.localIP());
   delay(2000);
 
   // Ping
   if(Ping.ping(IPAddress(10, 42, 0, 1))){
-		PCSerial.println("[Success]:Ping to 10.42.0.1");
+		DEBUG_PRINTLN("[Success]:Ping to 10.42.0.1");
   } else {
-		PCSerial.println("[Error]:Ping to 10.42.0.1");
+		DEBUG_PRINTLN("[Error]:Ping to 10.42.0.1");
   }
 
   //micro-ROSの設定
@@ -121,20 +130,21 @@ void setup() {
 
   //セットアップが完了するとLEDが点灯する
   digitalWrite(LED_BLUE, HIGH);
-	PCSerial.println("[Finished]:Micro-ROS Setting");
+	DEBUG_PRINTLN("[Finished]:Micro-ROS Setting");
 }
 
 void loop() {
   delay(100);
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
   
+  // Redirect from PCSerial to IM920sL
   while(PCSerial.available()){
     if(digitalRead(IM920_BUSY) == LOW){
       IM920Serial.println(PCSerial.readStringUntil('\r'));
-      PCSerial.println();
+      DEBUG_PRINTLN();
     }
   }
   while(IM920Serial.available()){
-    PCSerial.println(IM920Serial.readStringUntil('\n'));
+    DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
   }
 }
