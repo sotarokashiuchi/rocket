@@ -15,7 +15,7 @@
 #error This example is only avaible for Arduino Portenta, Arduino Nano RP2040 Connect, ESP32 Dev module and Wio Terminal
 #endif
 
-// #define DEBUG_MODE
+#define DEBUG_MODE
 #if defined(DEBUG_MODE)
   #define DEBUG_PRINT(str) (PCSerial.print(str))
   #define DEBUG_PRINTLN(str) (PCSerial.println(str))
@@ -48,6 +48,7 @@ void error_loop(){
   }
 }
 
+// コールバック関数
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
   RCLC_UNUSED(last_call_time);
   if (timer != NULL) {
@@ -98,23 +99,26 @@ void setup() {
 		DEBUG_PRINTLN("[Error]:Ping to 10.42.0.1");
   }
 
-  //micro-ROSの設定
+  /*
+   * micro-ROS
+   */
+  // micro-ROS用のメモリを確保
   allocator = rcl_get_default_allocator();
 
-  //create init_options
+  // rclcの初期化
   RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
 
-  // create node
+  // nodeの作成
   RCCHECK(rclc_node_init_default(&node, "micro_ros_platformio_node", "", &support));
 
-  // create publisher
+  // publisherの作成
   RCCHECK(rclc_publisher_init_default(
     &publisher,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
     "micro_ros_platformio_node_publisher"));
 
-  // create timer,
+  // timerの作成
   const unsigned int timer_timeout = 1000;
   RCCHECK(rclc_timer_init_default(
     &timer,
@@ -122,13 +126,13 @@ void setup() {
     RCL_MS_TO_NS(timer_timeout),
     timer_callback));
 
-  // create executor
+  // executorの作成
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
   msg.data = 0;
 
-  //セットアップが完了するとLEDが点灯する
+  // セットアップが完了するとLEDが点灯する
   digitalWrite(LED_BLUE, HIGH);
 	DEBUG_PRINTLN("[Finished]:Micro-ROS Setting");
 }
