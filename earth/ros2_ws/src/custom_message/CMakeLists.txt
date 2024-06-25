@@ -26,7 +26,7 @@ endif()
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Postion.msg"
+  "msg/Position.msg"
  )
 
 ament_package()

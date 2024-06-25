@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
-
 #include <stdio.h>
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
@@ -10,6 +9,7 @@
 #include <SoftwareSerial.h>
 #include <std_msgs/msg/int32.h>
 #include <ESP32Ping.h>
+#include <custom_message/msg/position.h>
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT) && !defined(ARDUINO_WIO_TERMINAL)
 #error This example is only avaible for Arduino Portenta, Arduino Nano RP2040 Connect, ESP32 Dev module and Wio Terminal
@@ -33,7 +33,7 @@
 
 //micro-ROS関連で必要となる変数を宣言しておく
 rcl_publisher_t position_publisher;
-std_msgs__msg__Int32 msg;
+custom_message__msg__Position position_msg;
 rclc_executor_t executor;
 rclc_support_t support;
 rcl_allocator_t allocator;
@@ -105,11 +105,11 @@ void setup() {
   RCCHECK(rclc_node_init_default(&node, "ESP_node", "", &support));
 
   // publisherの作成
-  RCCHECK(rclc_publisher_init_default(
+  rclc_publisher_init_default(
     &position_publisher,
     &node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-    "position_publisher"));
+    ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Position),
+    "position_publisher");
 
   // executorの初期化
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
@@ -117,7 +117,9 @@ void setup() {
   // timerをexecutorに追加
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
-  msg.data = 0;
+  position_msg.x = 0;
+  position_msg.y = 0;
+  position_msg.z = 0;
 
   // セットアップが完了するとLEDが点灯する
   digitalWrite(LED_BLUE, HIGH);
@@ -142,6 +144,8 @@ void loop() {
 
 // position_publish
 void position_publish() {
-  msg.data++;
-  RCSOFTCHECK(rcl_publish(&position_publisher, &msg, NULL));
+  position_msg.x++;
+  position_msg.y--;
+  position_msg.z=position_msg.x*position_msg.y;
+  RCSOFTCHECK(rcl_publish(&position_publisher, &position_msg, NULL));
 }
