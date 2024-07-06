@@ -36,11 +36,11 @@
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
 
-struct euler_t {
+typedef struct {
   float yaw;
   float pitch;
   float roll;
-} ypr;
+} euler_t;
 
 //micro-ROS関連で必要となる変数を宣言しておく
 rcl_publisher_t position_publisher;
@@ -60,13 +60,14 @@ void error_loop(){
 }
 
 void position_publish();
-void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, euler_t* ypr, bool degrees = false);
+void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, euler_t* ypr, bool degrees);
 void setReports();
 
 HardwareSerial PCSerial(0);
 HardwareSerial IM920Serial(2);
 Adafruit_BNO08x bno08x(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
+euler_t ypr;
 
 void setup() {
   // PCSerial
@@ -135,21 +136,18 @@ void setup() {
   position_msg.x = 0;
   position_msg.y = 0;
   position_msg.z = 0;
-
-  // セットアップが完了するとLEDが点灯する
-  digitalWrite(LED_BLUE, HIGH);
 	DEBUG_PRINTLN("[Finished]:Micro-ROS Setting");
+
   Wire.begin(21, 22); // SDAピンは21、SCLピンは22
   if (!bno08x.begin_I2C()) {
-    PCSerial.println("BNO08xチップが見つかりませんでした");
+  	DEBUG_PRINTLN("BNO08xチップが見つかりませんでした");
     while (1) { delay(10); }
   }
-  PCSerial.println("BNO08xが見つかりました！");
-
   setReports();
-
-  PCSerial.println("イベントを読み込んでいます");
   delay(100);
+  DEBUG_PRINTLN("[Finished]:setting BN008x");
+
+  digitalWrite(LED_BLUE, HIGH);
 }
 
 void loop() {
