@@ -13,6 +13,7 @@
 #include <custom_message/msg/euler.h>
 #include <Adafruit_BNO08x.h>
 #include <Wire.h>
+#include <TinyGPS++.h>
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT) && !defined(ARDUINO_WIO_TERMINAL)
 #error This example is only avaible for Arduino Portenta, Arduino Nano RP2040 Connect, ESP32 Dev module and Wio Terminal
@@ -59,16 +60,20 @@ void error_loop(){
 void position_publish();
 void quaternionToEuler(float qr, float qi, float qj, float qk);
 void setReports();
+void displayInfo(); 
 
 HardwareSerial PCSerial(0);
 HardwareSerial IM920Serial(2);
+HardwareSerial GpsSerial(1);
 Adafruit_BNO08x bno08x(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
+TinyGPSPlus gps;
 
 void setup() {
   // PCSerial
   PCSerial.begin(19200);
   PCSerial.setTimeout(10000);
+  GpsSerial.begin(57600, SERIAL_8N1, 32, 33);
 
   // IM920sL setting
   pinMode(IM920_BUSY, INPUT);
@@ -179,9 +184,13 @@ void loop() {
         DEBUG_PRINT(", ロール: "); DEBUG_PRINTLN(euler_msg.roll);
 				RCSOFTCHECK(rcl_publish(&euler_publisher, &euler_msg, NULL));
         break;
+  while (GpsSerial.available() > 0) {
+    char c = GpsSerial.read();
+    DEBUG_PRINT(c); // 受信データを確認するために追加
+    if (gps.encode(c)) {
+      displayInfo();
     }
   }
-
 }
 
 // position_publish
@@ -194,7 +203,7 @@ void position_publish() {
 
 void setReports() {
   if (!bno08x.enableReport(SH2_ROTATION_VECTOR), 500) {
-    Serial.println("Could not enable quaternion report");
+    DEBUG_PRINTLN("Could not enable quaternion report");
   }
 }
 
@@ -210,3 +219,28 @@ void quaternionToEuler(float qr, float qi, float qj, float qk) {
 }
 
 
+void displayInfo() {
+  if (gps.location.isValid()) {
+    double latitude = gps.location.lat();
+    double longitude = gps.location.lng();
+
+    DEBUG_PRINT("Latitude: ");
+    DEBUG_PRINT(latitude);
+    DEBUG_PRINT(", Longitude: ");
+    DEBUG_PRINT(longitude);
+    DEBUG_PRINT(", Altitude: ");
+    DEBUG_PRINT(gps.altitude.meters());
+    DEBUG_PRINT("m, Speed: ");
+    DEBUG_PRINT(gps.speed.kmph());
+    DEBUG_PRINTLN(" km/h");
+
+    DEBUG_PRINT("Google Maps URL: ");
+    DEBUG_PRINT("https://www.google.com/maps?q=");
+    DEBUG_PRINT(latitude);
+    DEBUG_PRINT(",");
+    DEBUG_PRINT(longitude);
+    DEBUG_PRINTLN();
+  } else {
+  	DEBUG_PRINTLN("位置情報がまだ有効ではありません。");
+  }
+}
