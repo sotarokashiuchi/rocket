@@ -219,28 +219,79 @@ void quaternionToEuler(float qr, float qi, float qj, float qk) {
 }
 
 
-void displayInfo() {
-  if (gps.location.isValid()) {
-    double latitude = gps.location.lat();
-    double longitude = gps.location.lng();
+// void displayInfo() {
+//   if (gps.location.isValid()) {
+//     double latitude = gps.location.lat();
+//     double longitude = gps.location.lng();
 
-    DEBUG_PRINT("Latitude: ");
-    DEBUG_PRINT(latitude);
-    DEBUG_PRINT(", Longitude: ");
-    DEBUG_PRINT(longitude);
-    DEBUG_PRINT(", Altitude: ");
-    DEBUG_PRINT(gps.altitude.meters());
-    DEBUG_PRINT("m, Speed: ");
-    DEBUG_PRINT(gps.speed.kmph());
-    DEBUG_PRINTLN(" km/h");
+//     DEBUG_PRINT("Latitude: ");
+//     DEBUG_PRINT(latitude);
+//     DEBUG_PRINT(", Longitude: ");
+//     DEBUG_PRINT(longitude);
+//     DEBUG_PRINT(", Altitude: ");
+//     DEBUG_PRINT(gps.altitude.meters());
+//     DEBUG_PRINT("m, Speed: ");
+//     DEBUG_PRINT(gps.speed.kmph());
+//     DEBUG_PRINTLN(" km/h");
 
-    DEBUG_PRINT("Google Maps URL: ");
-    DEBUG_PRINT("https://www.google.com/maps?q=");
-    DEBUG_PRINT(latitude);
-    DEBUG_PRINT(",");
-    DEBUG_PRINT(longitude);
-    DEBUG_PRINTLN();
-  } else {
-  	DEBUG_PRINTLN("位置情報がまだ有効ではありません。");
+//     DEBUG_PRINT("Google Maps URL: ");
+//     DEBUG_PRINT("https://www.google.com/maps?q=");
+//     DEBUG_PRINT(latitude);
+//     DEBUG_PRINT(",");
+//     DEBUG_PRINT(longitude);
+//     DEBUG_PRINTLN();
+//   } else {
+//   	DEBUG_PRINTLN("位置情報がまだ有効ではありません。");
+//   }
+// }
+
+void displayInfo()
+{
+  PCSerial.print(F("Location: ")); 
+  if (gps.location.isValid())
+  {
+    PCSerial.print(gps.location.lat(), 6);
+    PCSerial.print(F(","));
+    PCSerial.print(gps.location.lng(), 6);
   }
+  else
+  {
+    PCSerial.print(F("INVALID"));
+  }
+
+  PCSerial.print(F("  Date/Time: "));
+  if (gps.date.isValid())
+  {
+    PCSerial.print(gps.date.month());
+    PCSerial.print(F("/"));
+    PCSerial.print(gps.date.day());
+    PCSerial.print(F("/"));
+    PCSerial.print(gps.date.year());
+  }
+  else
+  {
+    PCSerial.print(F("INVALID"));
+  }
+
+  PCSerial.print(F(" "));
+  if (gps.time.isValid())
+  {
+    if (gps.time.hour() < 10) PCSerial.print(F("0"));
+    PCSerial.print(gps.time.hour());
+    PCSerial.print(F(":"));
+    if (gps.time.minute() < 10) PCSerial.print(F("0"));
+    PCSerial.print(gps.time.minute());
+    PCSerial.print(F(":"));
+    if (gps.time.second() < 10) PCSerial.print(F("0"));
+    PCSerial.print(gps.time.second());
+    PCSerial.print(F("."));
+    if (gps.time.centisecond() < 10) PCSerial.print(F("0"));
+    PCSerial.print(gps.time.centisecond());
+  }
+  else
+  {
+    PCSerial.print(F("INVALID"));
+  }
+
+  PCSerial.println();
 }
