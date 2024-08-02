@@ -186,7 +186,6 @@ void loop() {
         break;
   while (GpsSerial.available() > 0) {
     char c = GpsSerial.read();
-    DEBUG_PRINT(c); // 受信データを確認するために追加
     if (gps.encode(c)) {
       displayInfo();
     }
@@ -218,38 +217,12 @@ void quaternionToEuler(float qr, float qi, float qj, float qk) {
   euler_msg.roll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr)) * RAD_TO_DEG;
 }
 
-
-// void displayInfo() {
-//   if (gps.location.isValid()) {
-//     double latitude = gps.location.lat();
-//     double longitude = gps.location.lng();
-
-//     DEBUG_PRINT("Latitude: ");
-//     DEBUG_PRINT(latitude);
-//     DEBUG_PRINT(", Longitude: ");
-//     DEBUG_PRINT(longitude);
-//     DEBUG_PRINT(", Altitude: ");
-//     DEBUG_PRINT(gps.altitude.meters());
-//     DEBUG_PRINT("m, Speed: ");
-//     DEBUG_PRINT(gps.speed.kmph());
-//     DEBUG_PRINTLN(" km/h");
-
-//     DEBUG_PRINT("Google Maps URL: ");
-//     DEBUG_PRINT("https://www.google.com/maps?q=");
-//     DEBUG_PRINT(latitude);
-//     DEBUG_PRINT(",");
-//     DEBUG_PRINT(longitude);
-//     DEBUG_PRINTLN();
-//   } else {
-//   	DEBUG_PRINTLN("位置情報がまだ有効ではありません。");
-//   }
-// }
-
 void displayInfo()
 {
   PCSerial.print(F("Location: ")); 
   if (gps.location.isValid())
   {
+    // 位置の精度: 通常は約2.5メートル
     PCSerial.print(gps.location.lat(), 6);
     PCSerial.print(F(","));
     PCSerial.print(gps.location.lng(), 6);
@@ -276,6 +249,7 @@ void displayInfo()
   PCSerial.print(F(" "));
   if (gps.time.isValid())
   {
+    // 時間の精度: 30ナノ秒 (rms)
     if (gps.time.hour() < 10) PCSerial.print(F("0"));
     PCSerial.print(gps.time.hour());
     PCSerial.print(F(":"));
@@ -287,6 +261,28 @@ void displayInfo()
     PCSerial.print(F("."));
     if (gps.time.centisecond() < 10) PCSerial.print(F("0"));
     PCSerial.print(gps.time.centisecond());
+  }
+  else
+  {
+    PCSerial.print(F("INVALID"));
+  }
+
+  PCSerial.print(F("  Speed: "));
+  if(gps.speed.isValid()){
+    // 速度の精度: 0.1メートル/秒
+    PCSerial.print(gps.speed.mps(), 2);
+    PCSerial.print(" [m/s]");
+  }
+  else
+  {
+    PCSerial.print(F("INVALID"));
+  }
+
+  PCSerial.print(F("  Altitude: "));
+  if(gps.altitude.isValid()){
+    // 高度の精度: 通常は約3メートル
+    PCSerial.print(gps.altitude.meters(), 1);
+    PCSerial.print(" [m]");
   }
   else
   {
