@@ -289,5 +289,15 @@ void displayInfo()
     PCSerial.print(F("INVALID"));
   }
 
+  PCSerial.print(F("  Hdop: "));
+  if(gps.hdop.isValid()){
+    // 高度の精度: 通常は約3メートル
+    PCSerial.print(gps.hdop.hdop(), 1);
+  }
+  else
+  {
+    PCSerial.print(F("INVALID"));
+  }
+
   PCSerial.println();
 }
