@@ -27,6 +27,7 @@
 
 #define LED_BLUE 0
 #define IM920_BUSY 18
+#define FLIGHTPIN 23
 #define BNO08X_CS 10
 #define BNO08X_INT 4
 #define BNO08X_RESET -1
@@ -62,13 +63,7 @@ void setup() {
   // PinMode setting
   pinMode(LED_BLUE, OUTPUT);
   analogSetAttenuation(ADC_0db);
-
-  // Ping
-  if(Ping.ping(IPAddress(10, 42, 0, 1))){
-		DEBUG_PRINTLN("[Success]:Ping to 10.42.0.1");
-  } else {
-		DEBUG_PRINTLN("[Error]:Ping to 10.42.0.1");
-  }
+  pinMode(FLIGHTPIN, INPUT_PULLUP);
 
   Wire.begin(21, 22); // SDAピンは21、SCLピンは22
   if (!bno08x.begin_I2C()) {
@@ -110,11 +105,17 @@ void loop() {
     }
   }
 
-  while (GpsSerial.available() > 0) {
-    char c = GpsSerial.read();
-    if (gps.encode(c)) {
-      displayInfo();
-    }
+  // while (GpsSerial.available() > 0) {
+  //   char c = GpsSerial.read();
+  //   if (gps.encode(c)) {
+  //     displayInfo();
+  //   }
+  // }
+
+  if(digitalRead(FLIGHTPIN) == HIGH){
+    DEBUG_PRINTLN("HIGH");
+  } else {
+    DEBUG_PRINTLN("LOW");
   }
 }
 
