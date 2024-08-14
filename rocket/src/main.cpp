@@ -38,6 +38,7 @@ typedef struct {
   float roll;
 } euler_t;
 
+void logging();
 void quaternionToEuler(float qr, float qi, float qj, float qk);
 void setReports();
 void displayInfo(); 
@@ -52,7 +53,7 @@ euler_t ypr;
 
 void setup() {
   // PCSerial
-  PCSerial.begin(19200);
+  PCSerial.begin(115200);
   PCSerial.setTimeout(10000);
   GpsSerial.begin(57600, SERIAL_8N1, 32, 33);
 
@@ -79,17 +80,30 @@ void setup() {
 
 void loop() {
   delay(10);
-  
-  // Redirect from PCSerial to IM920sL
-  while(PCSerial.available()){
-    if(digitalRead(IM920_BUSY) == LOW){
-      IM920Serial.println(PCSerial.readStringUntil('\r'));
-      DEBUG_PRINTLN();
-    }
+  logging();
+
+  if(digitalRead(FLIGHTPIN) == HIGH){
+    DEBUG_PRINTLN("HIGH");
+  } else {
+    DEBUG_PRINTLN("LOW");
   }
-  while(IM920Serial.available()){
-    DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
-  }
+}
+
+// ROTATION,time,yaw,piitch,roll;
+// GPS,time,lat,lng,altitude,speed,hdop;
+// 
+void logging(){
+  // // Redirect from PCSerial to IM920sL
+  // while(PCSerial.available()){
+  //   if(digitalRead(IM920_BUSY) == LOW){
+  //     IM920Serial.println(PCSerial.readStringUntil('\r'));
+  //     DEBUG_PRINTLN();
+  //   }
+  // }
+  // while(IM920Serial.available()){
+  //   DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
+  // }
+
   if (bno08x.wasReset()) {
     setReports();
   }
@@ -105,17 +119,11 @@ void loop() {
     }
   }
 
-  // while (GpsSerial.available() > 0) {
-  //   char c = GpsSerial.read();
-  //   if (gps.encode(c)) {
-  //     displayInfo();
-  //   }
-  // }
-
-  if(digitalRead(FLIGHTPIN) == HIGH){
-    DEBUG_PRINTLN("HIGH");
-  } else {
-    DEBUG_PRINTLN("LOW");
+  while (GpsSerial.available() > 0) {
+    char c = GpsSerial.read();
+    if (gps.encode(c)) {
+      displayInfo();
+    }
   }
 }
 
