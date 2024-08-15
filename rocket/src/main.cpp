@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
@@ -26,6 +27,9 @@
   #define DEBUG_PRINTLN(str)
 #endif
 
+#define T1 4000
+#define T2 8000
+
 #define LED_BLUE 0
 #define IM920_BUSY 18
 #define FLIGHTPIN 23
@@ -46,6 +50,8 @@ void displayInfo();
 
 char data[200];
 char timestanp[16] = "";
+bool FlightStatus = false;
+unsigned long TimeStart;
 HardwareSerial PCSerial(0);
 HardwareSerial IM920Serial(2);
 HardwareSerial GpsSerial(1);
@@ -82,18 +88,30 @@ void setup() {
 }
 
 void loop() {
-  logging();
+  if(FlightStatus==false){
+    if(digitalRead(FLIGHTPIN) == HIGH){
+      for(int i=1; i<10; i++){
+        if(digitalRead(FLIGHTPIN) != HIGH) break;
+      }
+      // フライトピンの離脱
+      DEBUG_PRINTLN("*************************************************************FlightStatus = true*************************************************************");
+      FlightStatus = true;
+      TimeStart = millis();
+    }
+  } else {
+    if((millis()-TimeStart > T2) || (millis()-TimeStart > T1 && fabs(ypr.roll) > 90)){
+      // 開放機構作動
+      DEBUG_PRINTLN("*************************************************************Kaihou*************************************************************");
+      while(1) logging();
+    }
+  }
 
-  // if(digitalRead(FLIGHTPIN) == HIGH){
-  //   DEBUG_PRINTLN("HIGH");
-  // } else {
-  //   DEBUG_PRINTLN("LOW");
-  // }
+  logging();
 }
 
 // ROTATION,time,yaw,piitch,roll;
 // GPS,time,lat,lng,altitude,speed,hdop;
-// ACCELEROMETER,x,y,z;
+// ACCELEROMETER,time,x,y,z;
 void logging(){
   data[0] = '\0';
 
@@ -117,7 +135,7 @@ void logging(){
         sprintf(data, "%sROTATION,%s,%f,%f,%f;", data, timestanp, ypr.yaw, ypr.pitch, ypr.roll);
         break;
       case SH2_ACCELEROMETER:
-        sprintf(data, "%sACCELEROMETER,%f,%f,%f", data, sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
+        sprintf(data, "%sACCELEROMETER,%s,%f,%f,%f", data, timestanp, sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
         break;
     }
   }
