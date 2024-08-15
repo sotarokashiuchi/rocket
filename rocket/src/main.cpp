@@ -48,7 +48,7 @@ void quaternionToEuler(float qr, float qi, float qj, float qk);
 void setReports();
 void displayInfo(); 
 
-char data[200];
+char data[32*8+5];
 char timestanp[16] = "";
 bool FlightStatus = false;
 unsigned long TimeStart;
@@ -109,11 +109,12 @@ void loop() {
   logging();
 }
 
-// ROTATION,time,yaw,piitch,roll;
-// GPS,time,lat,lng,altitude,speed,hdop;
-// ACCELEROMETER,time,x,y,z;
+// ROTATION/time/yaw/piitch/roll;
+// GPS/time/lat/lng/altitude/speed/hdop;
+// ACCELEROMETER/time/x/y/z;
 void logging(){
-  data[0] = '\0';
+  memset(data, 0, sizeof(data));
+  sprintf(data, "%s", "TXDA ");
 
   while (GpsSerial.available() > 0) {
     gps.encode(GpsSerial.read());
@@ -132,22 +133,45 @@ void logging(){
     switch (sensorValue.sensorId) {
       case SH2_ROTATION_VECTOR:
 				quaternionToEuler(sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
-        sprintf(data, "%sROTATION,%s,%f,%f,%f;", data, timestanp, ypr.yaw, ypr.pitch, ypr.roll);
+        sprintf(data, "%sROTATION/%s/%f/%f/%f;", data, timestanp, ypr.yaw, ypr.pitch, ypr.roll);
         break;
       case SH2_ACCELEROMETER:
-        sprintf(data, "%sACCELEROMETER,%s,%f,%f,%f", data, timestanp, sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
+        sprintf(data, "%sACCELEROMETER/%s/%f/%f/%f", data, timestanp, sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
         break;
     }
   }
 
   if(gps.location.isUpdated()){
-    sprintf(data, "%sGPS,%s,%f,%f,%f,%f,%f;", data, timestanp, gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps(), gps.hdop.hdop());
+    sprintf(data, "%sGPS/%s/%f/%f/%f/%f/%f;", data, timestanp, gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps(), gps.hdop.hdop());
   }
 
   // データの送信
-  DEBUG_PRINTLN(data);
   if(digitalRead(IM920_BUSY) == LOW){
-    IM920Serial.println(data);
+    char *datap = data;
+    datap += 5;
+    do{
+      // PCSerial.println(datap-5);
+      IM920Serial.println(datap-5);
+      *(datap+26) = 'T';
+      *(datap+27) = 'X';
+      *(datap+28) = 'D';
+      *(datap+29) = 'A';
+      *(datap+30) = ' ';
+      datap += 31;
+    } while(*datap != '\0');
+  }
+  delay(300);
+
+  // delay(5000);
+  // Redirect from PCSerial to IM920sL
+  while(PCSerial.available()){
+    if(digitalRead(IM920_BUSY) == LOW){
+      IM920Serial.println(PCSerial.readStringUntil('\r'));
+      DEBUG_PRINTLN();
+    }
+  }
+  while(IM920Serial.available()){
+    DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
   }
 }
 
