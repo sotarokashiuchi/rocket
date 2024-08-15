@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
 #include <stdio.h>
+#include <string.h>
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
@@ -10,7 +11,7 @@
 #include <ESP32Ping.h>
 #include <Adafruit_BNO08x.h>
 #include <Wire.h>
-#include <TinyGPS++.h>
+#include <TinyGPS++.h> // https://github.com/mikalhart/TinyGPSPlus?tab=readme-ov-file https://arduiniana.org/libraries/tinygpsplus/
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT) && !defined(ARDUINO_WIO_TERMINAL)
 #error This example is only avaible for Arduino Portenta, Arduino Nano RP2040 Connect, ESP32 Dev module and Wio Terminal
@@ -43,6 +44,8 @@ void quaternionToEuler(float qr, float qi, float qj, float qk);
 void setReports();
 void displayInfo(); 
 
+char data[200];
+char timestanp[16] = "";
 HardwareSerial PCSerial(0);
 HardwareSerial IM920Serial(2);
 HardwareSerial GpsSerial(1);
@@ -79,30 +82,29 @@ void setup() {
 }
 
 void loop() {
-  delay(10);
   logging();
 
-  if(digitalRead(FLIGHTPIN) == HIGH){
-    DEBUG_PRINTLN("HIGH");
-  } else {
-    DEBUG_PRINTLN("LOW");
-  }
+  // if(digitalRead(FLIGHTPIN) == HIGH){
+  //   DEBUG_PRINTLN("HIGH");
+  // } else {
+  //   DEBUG_PRINTLN("LOW");
+  // }
 }
 
 // ROTATION,time,yaw,piitch,roll;
 // GPS,time,lat,lng,altitude,speed,hdop;
-// 
+// ACCELEROMETER,x,y,z;
 void logging(){
-  // // Redirect from PCSerial to IM920sL
-  // while(PCSerial.available()){
-  //   if(digitalRead(IM920_BUSY) == LOW){
-  //     IM920Serial.println(PCSerial.readStringUntil('\r'));
-  //     DEBUG_PRINTLN();
-  //   }
-  // }
-  // while(IM920Serial.available()){
-  //   DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
-  // }
+  data[0] = '\0';
+
+  while (GpsSerial.available() > 0) {
+    gps.encode(GpsSerial.read());
+  }
+
+  // タイムスタンプの更新
+  if (gps.time.isUpdated()) {
+    sprintf(timestanp, "%d:%d:%d.%d", gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
+  }
 
   if (bno08x.wasReset()) {
     setReports();
@@ -112,23 +114,30 @@ void logging(){
     switch (sensorValue.sensorId) {
       case SH2_ROTATION_VECTOR:
 				quaternionToEuler(sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
-        DEBUG_PRINT("ヨー: "); DEBUG_PRINT(ypr.yaw);
-        DEBUG_PRINT(", ピッチ: "); DEBUG_PRINT(ypr.pitch);
-        DEBUG_PRINT(", ロール: "); DEBUG_PRINTLN(ypr.roll);
+        sprintf(data, "%sROTATION,%s,%f,%f,%f;", data, timestanp, ypr.yaw, ypr.pitch, ypr.roll);
+        break;
+      case SH2_ACCELEROMETER:
+        sprintf(data, "%sACCELEROMETER,%f,%f,%f", data, sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
         break;
     }
   }
 
-  while (GpsSerial.available() > 0) {
-    char c = GpsSerial.read();
-    if (gps.encode(c)) {
-      displayInfo();
-    }
+  if(gps.location.isUpdated()){
+    sprintf(data, "%sGPS,%s,%f,%f,%f,%f,%f;", data, timestanp, gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps(), gps.hdop.hdop());
+  }
+
+  // データの送信
+  DEBUG_PRINTLN(data);
+  if(digitalRead(IM920_BUSY) == LOW){
+    IM920Serial.println(data);
   }
 }
 
 void setReports() {
   if (!bno08x.enableReport(SH2_ROTATION_VECTOR), 500) {
+    DEBUG_PRINTLN("Could not enable quaternion report");
+  }
+  if (!bno08x.enableReport(SH2_ACCELEROMETER), 500) {
     DEBUG_PRINTLN("Could not enable quaternion report");
   }
 }
@@ -144,86 +153,3 @@ void quaternionToEuler(float qr, float qi, float qj, float qk) {
   ypr.roll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr)) * RAD_TO_DEG;
 }
 
-void displayInfo()
-{
-  PCSerial.print(F("Location: ")); 
-  if (gps.location.isValid())
-  {
-    // 位置の精度: 通常は約2.5メートル
-    PCSerial.print(gps.location.lat(), 6);
-    PCSerial.print(F(","));
-    PCSerial.print(gps.location.lng(), 6);
-  }
-  else
-  {
-    PCSerial.print(F("INVALID"));
-  }
-
-  PCSerial.print(F("  Date/Time: "));
-  if (gps.date.isValid())
-  {
-    PCSerial.print(gps.date.month());
-    PCSerial.print(F("/"));
-    PCSerial.print(gps.date.day());
-    PCSerial.print(F("/"));
-    PCSerial.print(gps.date.year());
-  }
-  else
-  {
-    PCSerial.print(F("INVALID"));
-  }
-
-  PCSerial.print(F(" "));
-  if (gps.time.isValid())
-  {
-    // 時間の精度: 30ナノ秒 (rms)
-    if (gps.time.hour() < 10) PCSerial.print(F("0"));
-    PCSerial.print(gps.time.hour());
-    PCSerial.print(F(":"));
-    if (gps.time.minute() < 10) PCSerial.print(F("0"));
-    PCSerial.print(gps.time.minute());
-    PCSerial.print(F(":"));
-    if (gps.time.second() < 10) PCSerial.print(F("0"));
-    PCSerial.print(gps.time.second());
-    PCSerial.print(F("."));
-    if (gps.time.centisecond() < 10) PCSerial.print(F("0"));
-    PCSerial.print(gps.time.centisecond());
-  }
-  else
-  {
-    PCSerial.print(F("INVALID"));
-  }
-
-  PCSerial.print(F("  Speed: "));
-  if(gps.speed.isValid()){
-    // 速度の精度: 0.1メートル/秒
-    PCSerial.print(gps.speed.mps(), 2);
-    PCSerial.print(" [m/s]");
-  }
-  else
-  {
-    PCSerial.print(F("INVALID"));
-  }
-
-  PCSerial.print(F("  Altitude: "));
-  if(gps.altitude.isValid()){
-    // 高度の精度: 通常は約3メートル
-    PCSerial.print(gps.altitude.meters(), 1);
-    PCSerial.print(" [m]");
-  }
-  else
-  {
-    PCSerial.print(F("INVALID"));
-  }
-
-  PCSerial.print(F("  Hdop: "));
-  if(gps.hdop.isValid()){
-    PCSerial.print(gps.hdop.hdop(), 10);
-  }
-  else
-  {
-    PCSerial.print(F("INVALID"));
-  }
-
-  PCSerial.println();
-}
