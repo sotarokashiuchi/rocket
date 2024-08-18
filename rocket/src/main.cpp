@@ -68,7 +68,7 @@ void setup() {
 
   // IM920sL setting
   pinMode(IM920_BUSY, INPUT);
-  IM920Serial.begin(19200);
+  IM920Serial.begin(115200);
 
   // PinMode setting
   pinMode(LED_BLUE, OUTPUT);
@@ -146,33 +146,34 @@ void logging(){
   }
 
   // データの送信
-  if(digitalRead(IM920_BUSY) == LOW){
-    char *datap = data;
-    datap += 5;
-    do{
-      // PCSerial.println(datap-5);
+  char *datap = data;
+  String result;
+  datap += 5;
+  do{
+    // PCSerial.println(datap-5);
+    if(digitalRead(IM920_BUSY) == LOW){
       IM920Serial.println(datap-5);
+      result = IM920Serial.readStringUntil('\n');
+      if(result == "NG\r"){
+        // DEBUG_PRINTLN("NG");
+        continue;
+      } else if(result == "OK\r") {
+        // DEBUG_PRINTLN(datap-5);
+      } else if(result == ""){
+        FlightStatus = Ready;
+        return;
+      }
       *(datap+26) = 'T';
       *(datap+27) = 'X';
       *(datap+28) = 'D';
       *(datap+29) = 'A';
       *(datap+30) = ' ';
       datap += 31;
-    } while(*datap != '\0');
-  }
-  delay(300);
-
-  // delay(5000);
-  // Redirect from PCSerial to IM920sL
-  while(PCSerial.available()){
-    if(digitalRead(IM920_BUSY) == LOW){
-      IM920Serial.println(PCSerial.readStringUntil('\r'));
-      DEBUG_PRINTLN();
     }
-  }
-  while(IM920Serial.available()){
-    DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
-  }
+  } while(*datap != '\0');
+  // delay(10);
+
+  // Redirect from PCSerial to IM920sL
 }
 
 void setReports() {
