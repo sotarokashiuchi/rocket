@@ -33,6 +33,12 @@
 #define LED_BLUE 0
 #define IM920_BUSY 18
 #define FLIGHTPIN 23
+#define STBY 12
+#define AIN1 27
+#define AIN2 26
+// 0,1,3,14,15,34,35,36,39は使用しないほうが良い
+#define PWMA 25
+#define PWMCH 0
 #define BNO08X_CS 10
 #define BNO08X_INT 4
 #define BNO08X_RESET -1
@@ -50,6 +56,8 @@ enum {
 };
 
 void logging();
+void release();
+void close();
 void quaternionToEuler(float qr, float qi, float qj, float qk);
 void setReports();
 void displayInfo(); 
@@ -80,6 +88,18 @@ void setup() {
   pinMode(LED_BLUE, OUTPUT);
   analogSetAttenuation(ADC_0db);
   pinMode(FLIGHTPIN, INPUT_PULLUP);
+  pinMode(STBY, OUTPUT);
+  pinMode(AIN1, OUTPUT);
+  pinMode(AIN2, OUTPUT);
+  pinMode(PWMA, OUTPUT);
+  ledcSetup(PWMCH, 7812.5, 8);
+  ledcAttachPin(PWMA, PWMCH);
+  ledcWrite(PWMCH, 128);
+
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+  analogWrite(PWMA, 0);
+  digitalWrite(STBY, HIGH);
 
   Wire.begin(21, 22); // SDAピンは21、SCLピンは22
   if (!bno08x.begin_I2C()) {
@@ -186,6 +206,28 @@ void logging(){
   // delay(10);
 
   // Redirect from PCSerial to IM920sL
+
+void release(){
+  DEBUG_PRINTLN("RELEASE");
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  analogWrite(PWMA, 50);
+  delay(2500);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+  return;
+}
+
+void close(){
+  DEBUG_PRINTLN("CLOSE");
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+  analogWrite(PWMA, 50);
+  delay(2500);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+}
+
 }
 
 void setReports() {
