@@ -43,6 +43,12 @@ typedef struct {
   float roll;
 } euler_t;
 
+enum {
+  Ready,
+  Start,
+  Parachute,
+};
+
 void logging();
 void quaternionToEuler(float qr, float qi, float qj, float qk);
 void setReports();
@@ -50,7 +56,7 @@ void displayInfo();
 
 char data[32*8+5];
 char timestanp[16] = "";
-bool FlightStatus = false;
+int FlightStatus = Ready;
 unsigned long TimeStart;
 HardwareSerial PCSerial(0);
 HardwareSerial IM920Serial(2);
@@ -88,22 +94,28 @@ void setup() {
 }
 
 void loop() {
-  if(FlightStatus==false){
-    if(digitalRead(FLIGHTPIN) == HIGH){
-      for(int i=1; i<10; i++){
-        if(digitalRead(FLIGHTPIN) != HIGH) break;
+  switch(FlightStatus){
+    case Ready:
+      if(digitalRead(FLIGHTPIN) == HIGH){
+        for(int i=1; i<10; i++){
+          if(digitalRead(FLIGHTPIN) != HIGH) break;
+        }
+        // フライトピンの離脱
+        DEBUG_PRINTLN("*************************************************************FlightStatus = true*************************************************************");
+        FlightStatus = Start;
+        TimeStart = millis();
       }
-      // フライトピンの離脱
-      DEBUG_PRINTLN("*************************************************************FlightStatus = true*************************************************************");
-      FlightStatus = true;
-      TimeStart = millis();
-    }
-  } else {
-    if((millis()-TimeStart > T2) || (millis()-TimeStart > T1 && fabs(ypr.roll) > 90)){
-      // 開放機構作動
-      DEBUG_PRINTLN("*************************************************************Kaihou*************************************************************");
-      while(1) logging();
-    }
+      break;
+    case Start:
+      if((millis()-TimeStart > T2) || (millis()-TimeStart > T1 && fabs(ypr.roll) > 90)){
+        // 開放機構作動
+        DEBUG_PRINTLN("*************************************************************Kaihou*************************************************************");
+        FlightStatus = Parachute;
+        while(FlightStatus == Parachute){
+          logging();
+        }
+      }
+      break;
   }
 
   logging();
