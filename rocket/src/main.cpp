@@ -27,8 +27,8 @@
   #define DEBUG_PRINTLN(str)
 #endif
 
-#define T1 4000
-#define T2 8000
+#define T1 3290
+#define T2 9740
 
 #define LED_BLUE 0
 #define IM920_BUSY 18
