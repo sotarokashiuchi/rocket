@@ -60,12 +60,16 @@ void release();
 void close();
 void quaternionToEuler(float qr, float qi, float qj, float qk);
 void setReports();
-void displayInfo(); 
+void displayInfo();
+void flightpin();
 
 char data[32*8+5];
 char timestanp[16] = "";
 int FlightStatus = Ready;
+volatile int FlightPinCount;
+volatile SemaphoreHandle_t timerSemaphore;
 unsigned long TimeStart;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 HardwareSerial PCSerial(0);
 HardwareSerial IM920Serial(2);
 HardwareSerial GpsSerial(1);
@@ -73,6 +77,7 @@ Adafruit_BNO08x bno08x(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
 TinyGPSPlus gps;
 euler_t ypr;
+hw_timer_t *timer = NULL;
 
 void setup() {
   // PCSerial
@@ -101,6 +106,11 @@ void setup() {
   analogWrite(PWMA, 0);
   digitalWrite(STBY, HIGH);
 
+  timerSemaphore = xSemaphoreCreateBinary();
+  timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(timer, &flightpin, true);
+  timerAlarmWrite(timer, 10000, true);
+
   Wire.begin(21, 22); // SDAピンは21、SCLピンは22
   if (!bno08x.begin_I2C()) {
   	DEBUG_PRINTLN("BNO08xチップが見つかりませんでした");
@@ -117,11 +127,26 @@ void loop() {
   switch(FlightStatus){
     case Ready:
       if(digitalRead(FLIGHTPIN) == HIGH){
-        for(int i=1; i<10; i++){
-          if(digitalRead(FLIGHTPIN) != HIGH) break;
+        int flightpincount;
+        DEBUG_PRINT("Start:");
+        DEBUG_PRINTLN(millis());
+        FlightPinCount = flightpincount = 15;
+        timerAlarmEnable(timer);
+        while(flightpincount > 0){
+          if(xSemaphoreTake(timerSemaphore, 0) == pdTRUE){
+            portENTER_CRITICAL(&timerMux);
+            flightpincount = FlightPinCount;
+            portEXIT_CRITICAL(&timerMux);
+          }
         }
+        timerAlarmDisable(timer);
+        if(flightpincount == -256){
+          break;
+        }
+        DEBUG_PRINT("Stop:");
+        DEBUG_PRINTLN(millis());
         // フライトピンの離脱
-        DEBUG_PRINTLN("*************************************************************FlightStatus = true*************************************************************");
+        DEBUG_PRINTLN("*************************************************************** Start ***************************************************************");
         FlightStatus = Start;
         TimeStart = millis();
       }
@@ -129,7 +154,9 @@ void loop() {
     case Start:
       if((millis()-TimeStart > T2) || (millis()-TimeStart > T1 && fabs(ypr.roll) > 90)){
         // 開放機構作動
-        DEBUG_PRINTLN("*************************************************************Kaihou*************************************************************");
+        DEBUG_PRINTLN("************************************************************** Release **************************************************************");
+        release();
+        DEBUG_PRINTLN("************************************************************* Parachute *************************************************************");
         FlightStatus = Parachute;
         while(FlightStatus == Parachute){
           logging();
@@ -228,6 +255,15 @@ void close(){
   digitalWrite(AIN2, LOW);
 }
 
+void IRAM_ATTR flightpin(){
+  portENTER_CRITICAL_ISR(&timerMux);
+  if(digitalRead(FLIGHTPIN) == HIGH){
+    FlightPinCount--;
+  } else {
+    FlightPinCount = -256;
+  }
+  portEXIT_CRITICAL_ISR(&timerMux);
+  xSemaphoreGiveFromISR(timerSemaphore, NULL);
 }
 
 void setReports() {
