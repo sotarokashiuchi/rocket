@@ -218,8 +218,10 @@ void logging(){
         continue;
       } else if(result == "OK\r") {
         // DEBUG_PRINTLN(datap-5);
-      } else if(result == ""){
+      // } else if(result == ""){
+      } else {
         FlightStatus = Ready;
+        close();
         return;
       }
       *(datap+26) = 'T';
