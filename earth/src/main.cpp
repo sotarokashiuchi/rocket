@@ -180,3 +180,26 @@ void position_publish() {
   position_msg.z=position_msg.x*position_msg.y;
   RCSOFTCHECK(rcl_publish(&position_publisher, &position_msg, NULL));
 }
+
+int pareInt(int *x){
+	int value = 0;
+	int i;
+	for(i=0; line[i] != '\0'; i++){
+		if(line[i] == '\r' || line[i] == '\n') 	continue;
+		//if(!('0' <= line[i] && line[i] <= '9')) 	break;
+		//value += line[i] - '0';
+		//value *= 10;
+	}
+	// *x = value==0? 0: value/10;
+	*x = atoi(&line[i]);
+
+	if(i==1){
+		return -1;
+	} else {
+		if(line[i+1] == '/') i++;
+		line = line.substring(i);
+		return i;
+	}
+}
+
+
