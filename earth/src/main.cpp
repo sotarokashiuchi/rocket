@@ -9,8 +9,10 @@
 #include <SoftwareSerial.h>
 #include <std_msgs/msg/int32.h>
 #include <ESP32Ping.h>
-#include <custom_message/msg/position.h>
 #include <custom_message/msg/rotation.h>
+#include <custom_message/msg/accelerometer.h>
+#include <custom_message/msg/gps.h>
+#include <custom_message/msg/time.h>
 #include <Wire.h>
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT) && !defined(ARDUINO_WIO_TERMINAL)
@@ -40,10 +42,14 @@ String buf;
 String line;
 
 //micro-ROS関連で必要となる変数を宣言しておく
-rcl_publisher_t position_publisher;
 rcl_publisher_t rotation_publisher;
-custom_message__msg__Position position_msg;
+rcl_publisher_t accelerometer_publisher;
+rcl_publisher_t gps_publisher;
+rcl_publisher_t time_publisher;
 custom_message__msg__Rotation rotation_msg;
+custom_message__msg__Accelerometer accelerometer_msg;
+custom_message__msg__Gps gps_msg;
+custom_message__msg__Time time_msg;
 rclc_executor_t executor;
 rclc_support_t support;
 rcl_allocator_t allocator;
@@ -116,16 +122,28 @@ void setup() {
 
   // publisherの作成
   rclc_publisher_init_default(
-    &position_publisher,
+    &accelerometer_publisher,
     &node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Position),
-    "position_publisher");
+    ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Accelerometer),
+    "accelerometer_publisher");
 
 	rclc_publisher_init_default(
-			&rotation_publisher,
-			&node,
-			ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Rotation),
-			"rotation_publisher");
+    &rotation_publisher,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Rotation),
+    "rotation_publisher");
+
+  rclc_publisher_init_default(
+    &gps_publisher,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Gps),
+    "gps_publisher");
+
+  rclc_publisher_init_default(
+    &time_publisher,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Time),
+    "time_publisher");
 
   // executorの初期化
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
@@ -139,9 +157,6 @@ void setup() {
 }
 
 void loop() {
-  delay(10);
-  // position_publish();
-  
   // Redirect from PCSerial to IM920sL
   // while(PCSerial.available()){
   //   if(digitalRead(IM920_BUSY) == LOW){
@@ -172,6 +187,17 @@ void loop() {
 
   switch (line[0])  {
     case 'T':
+      char time_buf[64];
+
+      line = line.substring(1);
+      pareInt(&time_msg.time);
+
+      line.toCharArray(time_buf, 64);
+      time_msg.date.data = time_buf;
+      time_msg.date.size = line.length();
+      time_msg.date.capacity = 64;
+
+      RCSOFTCHECK(rcl_publish(&time_publisher, &time_msg, NULL));
       break;
 		case 'R':
 			line = line.substring(1);
@@ -182,8 +208,21 @@ void loop() {
       RCSOFTCHECK(rcl_publish(&rotation_publisher, &rotation_msg, NULL));
       break;
 		case 'G':
+      line = line.substring(1);
+      pareInt(&gps_msg.time);
+      pareDouble(&gps_msg.lat);
+      pareDouble(&gps_msg.lng);
+      pareDouble(&gps_msg.altitude);
+      pareDouble(&gps_msg.speed);
+      RCSOFTCHECK(rcl_publish(&gps_publisher, &gps_msg, NULL));
       break;
 		case 'A':
+      line = line.substring(1);
+      pareInt(&accelerometer_msg.time);
+      pareDouble(&accelerometer_msg.x);
+      pareDouble(&accelerometer_msg.y);
+      pareDouble(&accelerometer_msg.z);
+      RCSOFTCHECK(rcl_publish(&accelerometer_publisher, &accelerometer_msg, NULL));
       break;
   }
 }
