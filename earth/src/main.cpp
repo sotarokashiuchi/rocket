@@ -33,6 +33,9 @@
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
 
+String buf;
+String line;
+
 //micro-ROS関連で必要となる変数を宣言しておく
 rcl_publisher_t position_publisher;
 rcl_publisher_t euler_publisher;
@@ -140,14 +143,33 @@ void loop() {
   position_publish();
   
   // Redirect from PCSerial to IM920sL
-  while(PCSerial.available()){
-    if(digitalRead(IM920_BUSY) == LOW){
-      IM920Serial.println(PCSerial.readStringUntil('\r'));
-      DEBUG_PRINTLN();
+  // while(PCSerial.available()){
+  //   if(digitalRead(IM920_BUSY) == LOW){
+  //     IM920Serial.println(PCSerial.readStringUntil('\r'));
+  //     DEBUG_PRINTLN();
+  //   }
+  // }  
+
+  line = "";
+  for(int i=0, j=0; 1; i++, j++){
+    if(buf.length() == j){
+      do{
+        // buf = IM920Serial.readStringUntil('\n');
+        buf = PCSerial.readStringUntil('\r');
+      }while(buf.length() <= 0);
+      j=0;
     }
+    if(buf[j] == 'T' || buf[j] == 'R' || buf[j] == 'G' || buf[j] == 'A'){
+      if(i!=0){
+        buf = buf.substring(j);
+        break;
+      }
+    }
+    line += buf[j];
   }
-  while(IM920Serial.available()){
-    DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
+  DEBUG_PRINT("line = ");
+  DEBUG_PRINTLN(line);
+
   }
 }
 
