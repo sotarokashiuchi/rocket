@@ -33,6 +33,9 @@
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
 
+void pareDouble(double *x);
+void pareInt(int *ret);
+
 String buf;
 String line;
 
@@ -170,6 +173,16 @@ void loop() {
   DEBUG_PRINT("line = ");
   DEBUG_PRINTLN(line);
 
+  switch (line[0])  {
+    case 'T':
+      break;
+		case 'R':
+			line = line.substring(1);
+      break;
+		case 'G':
+      break;
+		case 'A':
+      break;
   }
 }
 
@@ -181,25 +194,17 @@ void position_publish() {
   RCSOFTCHECK(rcl_publish(&position_publisher, &position_msg, NULL));
 }
 
-int pareInt(int *x){
-	int value = 0;
-	int i;
-	for(i=0; line[i] != '\0'; i++){
-		if(line[i] == '\r' || line[i] == '\n') 	continue;
-		//if(!('0' <= line[i] && line[i] <= '9')) 	break;
-		//value += line[i] - '0';
-		//value *= 10;
-	}
-	// *x = value==0? 0: value/10;
-	*x = atoi(&line[i]);
-
-	if(i==1){
-		return -1;
-	} else {
-		if(line[i+1] == '/') i++;
-		line = line.substring(i);
-		return i;
-	}
+void pareDouble(double *x){
+  int i;
+	*x = line.toDouble();
+  for(i=0; line[i] != '\0' && line[i] != '/'; i++);  
+	line = line.substring(i+1);
 }
 
+void pareInt(int *x){
+  int i;
+	*x = line.toInt();
+  for(i=0; line[i] != '\0' && line[i] != '/'; i++);  
+	line = line.substring(i+1);
+}
 
