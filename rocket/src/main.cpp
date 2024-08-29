@@ -164,13 +164,13 @@ void loop() {
       }
       break;
   }
-
   logging();
 }
 
-// ROTATION/time/yaw/piitch/roll;
-// GPS/time/lat/lng/altitude/speed/hdop;
-// ACCELEROMETER/time/x/y/z;
+// Ttime/time
+// Rtime/yaw/piitch/roll 18 RO
+// Gtime/lat/lng/altitude/speed 22 GPS
+// Atime/x/y/z 18 ACC
 void logging(){
   memset(data, 0, sizeof(data));
   sprintf(data, "%s", "TXDA ");
@@ -179,9 +179,13 @@ void logging(){
     gps.encode(GpsSerial.read());
   }
 
+  if(gps.location.isUpdated()){
+    sprintf(data, "%sG%d/%7f/%7f/%.1f/%3f;", data, millis(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps());
+  }
+
   // タイムスタンプの更新
   if (gps.time.isUpdated()) {
-    sprintf(timestanp, "%d:%d:%d.%d", gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
+    sprintf(data, "%sT%d/%d:%d:%d.%d;", millis(), gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
   }
 
   if (bno08x.wasReset()) {
@@ -192,16 +196,12 @@ void logging(){
     switch (sensorValue.sensorId) {
       case SH2_ROTATION_VECTOR:
 				quaternionToEuler(sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
-        sprintf(data, "%sROTATION/%s/%f/%f/%f;", data, timestanp, ypr.yaw, ypr.pitch, ypr.roll);
+        sprintf(data, "%sR%d/%6f/%6f/%6f;", data, millis(), ypr.yaw, ypr.pitch, ypr.roll);
         break;
       case SH2_ACCELEROMETER:
-        sprintf(data, "%sACCELEROMETER/%s/%f/%f/%f", data, timestanp, sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
+        sprintf(data, "%sA%d/%6f/%6f/%6f;", data, millis(), sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
         break;
     }
-  }
-
-  if(gps.location.isUpdated()){
-    sprintf(data, "%sGPS/%s/%f/%f/%f/%f/%f;", data, timestanp, gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps(), gps.hdop.hdop());
   }
 
   // データの送信

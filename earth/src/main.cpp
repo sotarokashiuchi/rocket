@@ -10,7 +10,7 @@
 #include <std_msgs/msg/int32.h>
 #include <ESP32Ping.h>
 #include <custom_message/msg/position.h>
-#include <custom_message/msg/euler.h>
+#include <custom_message/msg/rotation.h>
 #include <Wire.h>
 
 #if !defined(ESP32) && !defined(TARGET_PORTENTA_H7_M7) && !defined(ARDUINO_NANO_RP2040_CONNECT) && !defined(ARDUINO_WIO_TERMINAL)
@@ -41,9 +41,9 @@ String line;
 
 //micro-ROS関連で必要となる変数を宣言しておく
 rcl_publisher_t position_publisher;
-rcl_publisher_t euler_publisher;
+rcl_publisher_t rotation_publisher;
 custom_message__msg__Position position_msg;
-custom_message__msg__Euler euler_msg;
+custom_message__msg__Rotation rotation_msg;
 rclc_executor_t executor;
 rclc_support_t support;
 rcl_allocator_t allocator;
@@ -122,10 +122,10 @@ void setup() {
     "position_publisher");
 
 	rclc_publisher_init_default(
-			&euler_publisher,
+			&rotation_publisher,
 			&node,
-			ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Euler),
-			"euler_publisher");
+			ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Rotation),
+			"rotation_publisher");
 
   // executorの初期化
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
@@ -133,9 +133,6 @@ void setup() {
   // timerをexecutorに追加
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
-  position_msg.x = 0;
-  position_msg.y = 0;
-  position_msg.z = 0;
 	DEBUG_PRINTLN("[Finished]:Micro-ROS Setting");
 
   digitalWrite(LED_BLUE, HIGH);
@@ -143,7 +140,7 @@ void setup() {
 
 void loop() {
   delay(10);
-  position_publish();
+  // position_publish();
   
   // Redirect from PCSerial to IM920sL
   // while(PCSerial.available()){
@@ -178,6 +175,11 @@ void loop() {
       break;
 		case 'R':
 			line = line.substring(1);
+      pareInt(&rotation_msg.time);
+      pareDouble(&rotation_msg.yaw);
+      pareDouble(&rotation_msg.pitch);
+      pareDouble(&rotation_msg.roll);
+      RCSOFTCHECK(rcl_publish(&rotation_publisher, &rotation_msg, NULL));
       break;
 		case 'G':
       break;
@@ -186,12 +188,6 @@ void loop() {
   }
 }
 
-// position_publish
-void position_publish() {
-  position_msg.x++;
-  position_msg.y--;
-  position_msg.z=position_msg.x*position_msg.y;
-  RCSOFTCHECK(rcl_publish(&position_publisher, &position_msg, NULL));
 }
 
 void pareDouble(double *x){
