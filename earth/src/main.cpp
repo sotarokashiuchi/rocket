@@ -125,25 +125,25 @@ void setup() {
     &accelerometer_publisher,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Accelerometer),
-    "accelerometer_publisher");
+    "accelerometer_topic");
 
 	rclc_publisher_init_default(
     &rotation_publisher,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Rotation),
-    "rotation_publisher");
+    "rotation_topic");
 
   rclc_publisher_init_default(
     &gps_publisher,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Gps),
-    "gps_publisher");
+    "gps_topic");
 
   rclc_publisher_init_default(
     &time_publisher,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Time),
-    "time_publisher");
+    "time_topic");
 
   // executorの初期化
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
