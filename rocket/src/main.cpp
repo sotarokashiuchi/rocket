@@ -43,12 +43,6 @@
 #define BNO08X_INT 4
 #define BNO08X_RESET -1
 
-typedef struct {
-  float yaw;
-  float pitch;
-  float roll;
-} euler_t;
-
 enum {
   Ready,
   Start,
@@ -58,7 +52,6 @@ enum {
 void logging();
 void release();
 void close();
-void quaternionToEuler(float qr, float qi, float qj, float qk);
 void setReports();
 void displayInfo();
 void flightpin();
@@ -76,7 +69,6 @@ HardwareSerial GpsSerial(1);
 Adafruit_BNO08x bno08x(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
 TinyGPSPlus gps;
-euler_t ypr;
 hw_timer_t *timer = NULL;
 
 void setup() {
@@ -180,12 +172,12 @@ void logging(){
   }
 
   if(gps.location.isUpdated()){
-    sprintf(data, "%sG%d/%7f/%7f/%.1f/%3f;", data, millis(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps());
+    sprintf(data, "%sG%d/%7f/%7f/%.1f/%3f", data, millis(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps());
   }
 
   // タイムスタンプの更新
   if (gps.time.isUpdated()) {
-    sprintf(data, "%sT%d/%d:%d:%d.%d;", millis(), gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
+    sprintf(data, "%sT%d/%d:%d:%d.%d", millis(), gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
   }
 
   if (bno08x.wasReset()) {
@@ -195,11 +187,10 @@ void logging(){
   if (bno08x.getSensorEvent(&sensorValue)) {
     switch (sensorValue.sensorId) {
       case SH2_ROTATION_VECTOR:
-				quaternionToEuler(sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
-        sprintf(data, "%sR%d/%6f/%6f/%6f;", data, millis(), ypr.yaw, ypr.pitch, ypr.roll);
+        sprintf(data, "%sR%d/%6f/%6f/%6f/%6f", data, millis(), sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
         break;
       case SH2_ACCELEROMETER:
-        sprintf(data, "%sA%d/%6f/%6f/%6f;", data, millis(), sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
+        sprintf(data, "%sA%d/%6f/%6f/%6f", data, millis(), sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
         break;
     }
   }
@@ -235,6 +226,19 @@ void logging(){
   // delay(10);
 
   // Redirect from PCSerial to IM920sL
+  // while(PCSerial.available()){
+  //   if(digitalRead(IM920_BUSY) == LOW){
+  //     IM920Serial.println(PCSerial.readStringUntil('\r'));
+  //     DEBUG_PRINTLN();
+  //   }
+  // }
+  // while(IM920Serial.available()){
+  //   DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
+  // }
+  if(IM920Serial.available()){
+    close();
+  }
+}
 
 void release(){
   DEBUG_PRINTLN("RELEASE");
@@ -275,16 +279,5 @@ void setReports() {
   if (!bno08x.enableReport(SH2_ACCELEROMETER), 500) {
     DEBUG_PRINTLN("Could not enable quaternion report");
   }
-}
-
-void quaternionToEuler(float qr, float qi, float qj, float qk) {
-  float sqr = sq(qr);
-  float sqi = sq(qi);
-  float sqj = sq(qj);
-  float sqk = sq(qk);
-
-  ypr.yaw = atan2(2.0 * (qi * qj + qk * qr), (sqi - sqj - sqk + sqr)) * RAD_TO_DEG;
-  ypr.pitch = asin(-2.0 * (qi * qk - qj * qr) / (sqi + sqj + sqk + sqr)) * RAD_TO_DEG;
-  ypr.roll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr)) * RAD_TO_DEG;
 }
 

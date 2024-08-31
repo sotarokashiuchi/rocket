@@ -202,9 +202,10 @@ void loop() {
 		case 'R':
 			line = line.substring(1);
       pareInt(&rotation_msg.time);
-      pareDouble(&rotation_msg.yaw);
-      pareDouble(&rotation_msg.pitch);
-      pareDouble(&rotation_msg.roll);
+      pareDouble(&rotation_msg.x);
+      pareDouble(&rotation_msg.y);
+      pareDouble(&rotation_msg.z);
+      pareDouble(&rotation_msg.w);
       RCSOFTCHECK(rcl_publish(&rotation_publisher, &rotation_msg, NULL));
       break;
 		case 'G':
