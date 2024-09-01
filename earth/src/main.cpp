@@ -76,7 +76,7 @@ void setup() {
 
   // IM920sL setting
   pinMode(IM920_BUSY, INPUT);
-  IM920Serial.begin(19200);
+  IM920Serial.begin(115200);
 
   // PinMode setting
   pinMode(LED_BLUE, OUTPUT);
@@ -226,8 +226,6 @@ void loop() {
       RCSOFTCHECK(rcl_publish(&accelerometer_publisher, &accelerometer_msg, NULL));
       break;
   }
-}
-
 }
 
 void pareDouble(double *x){

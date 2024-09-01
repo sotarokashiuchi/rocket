@@ -207,9 +207,9 @@ void logging(){
       if(result == "NG\r"){
         // DEBUG_PRINTLN("NG");
         continue;
+        ///// mugennru-pu
       } else if(result == "OK\r") {
-        // DEBUG_PRINTLN(datap-5);
-      // } else if(result == ""){
+        
       } else {
         FlightStatus = Ready;
         close();
