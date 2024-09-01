@@ -43,6 +43,12 @@
 #define BNO08X_INT 4
 #define BNO08X_RESET -1
 
+typedef struct {
+  float yaw;
+  float pitch;
+  float roll;
+} euler_t;
+
 enum {
   Ready,
   Start,
@@ -55,6 +61,7 @@ void close();
 void setReports();
 void displayInfo();
 void flightpin();
+void quaternionToEuler(float qr, float qi, float qj, float qk);
 
 char data[32*8+5];
 char timestanp[16] = "";
@@ -70,6 +77,7 @@ Adafruit_BNO08x bno08x(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
 TinyGPSPlus gps;
 hw_timer_t *timer = NULL;
+euler_t ypr;
 
 void setup() {
   // PCSerial
@@ -188,6 +196,7 @@ void logging(){
     switch (sensorValue.sensorId) {
       case SH2_ROTATION_VECTOR:
         sprintf(data, "%sR%d/%6f/%6f/%6f/%6f", data, millis(), sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
+        quaternionToEuler(sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
         break;
       case SH2_ACCELEROMETER:
         sprintf(data, "%sA%d/%6f/%6f/%6f", data, millis(), sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
@@ -281,3 +290,11 @@ void setReports() {
   }
 }
 
+void quaternionToEuler(float qr, float qi, float qj, float qk) {
+  float sqr = sq(qr);
+  float sqi = sq(qi);
+  float sqj = sq(qj);
+  float sqk = sq(qk);
+
+  ypr.roll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr)) * RAD_TO_DEG;
+}
