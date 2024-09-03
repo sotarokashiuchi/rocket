@@ -55,7 +55,8 @@ enum {
   Parachute,
 };
 
-void logging();
+void loggingFast();
+void loggingSlow();
 void release();
 void close();
 void setReports();
@@ -63,18 +64,21 @@ void displayInfo();
 void flightpin();
 void quaternionToEuler(float qr, float qi, float qj, float qk);
 
-char data[32*8+5];
+char data[32*8+5] = {0};
 char timestanp[16] = "";
 int FlightStatus = Ready;
 volatile int FlightPinCount;
 volatile SemaphoreHandle_t timerSemaphore;
 unsigned long TimeStart;
+unsigned long lastPushTime = 0;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 HardwareSerial PCSerial(0);
 HardwareSerial IM920Serial(2);
 HardwareSerial GpsSerial(1);
 Adafruit_BNO08x bno08x(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
+sh2_Accelerometer_t accelerometer;
+sh2_RotationVectorWAcc_t rotattionVector;
 TinyGPSPlus gps;
 hw_timer_t *timer = NULL;
 euler_t ypr;
@@ -150,6 +154,7 @@ void loop() {
         FlightStatus = Start;
         TimeStart = millis();
       }
+      loggingSlow();
       break;
     case Start:
       if((millis()-TimeStart > T2) || (millis()-TimeStart > T1 && fabs(ypr.roll) > 90)){
@@ -159,37 +164,69 @@ void loop() {
         DEBUG_PRINTLN("************************************************************* Parachute *************************************************************");
         FlightStatus = Parachute;
         while(FlightStatus == Parachute){
-          logging();
+          loggingFast();
         }
       }
       break;
+    case Parachute:
+      loggingFast();
+      break;
   }
-  logging();
+}
+
+void logSend(){
+  // データの送信
+  char *datap = data;
+  String result;
+  datap += 5;
+  lastPushTime = millis();
+  do{
+    // PCSerial.println(datap-5);
+    if(digitalRead(IM920_BUSY) == LOW){
+      IM920Serial.println(datap-5);
+      result = IM920Serial.readStringUntil('\n');
+      if(result == "NG\r"){
+        DEBUG_PRINTLN("NG");
+        if(millis() - lastPushTime > 300){
+          break;
+        } else {
+          continue;
+        }
+      } else if(result == "OK\r") {
+        DEBUG_PRINTLN(data);
+      } else {
+        // FlightStatus = Ready;
+        // close();
+        return;
+      }
+      *(datap+26) = 'T';
+      *(datap+27) = 'X';
+      *(datap+28) = 'D';
+      *(datap+29) = 'A';
+      *(datap+30) = ' ';
+      datap += 31;
+    }
+  } while(*datap != '\0');
+  
+  memset(data, 0, sizeof(data));
+  sprintf(data, "%s", "TXDA ");
 }
 
 // Ttime/time
 // Rtime/yaw/piitch/roll 18 RO
 // Gtime/lat/lng/altitude/speed 22 GPS
 // Atime/x/y/z 18 ACC
-void logging(){
-  memset(data, 0, sizeof(data));
-  sprintf(data, "%s", "TXDA ");
-
+void loggingFast(){
   while (GpsSerial.available() > 0) {
     gps.encode(GpsSerial.read());
   }
 
-  if(gps.location.isUpdated()){
-    sprintf(data, "%sG%d/%7f/%7f/%.1f/%3f", data, millis(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps());
-  }
-
-  // タイムスタンプの更新
-  if (gps.time.isUpdated()) {
-    sprintf(data, "%sT%d/%d:%d:%d.%d", millis(), gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
-  }
-
   if (bno08x.wasReset()) {
     setReports();
+  }
+
+  if(gps.location.isUpdated()){
+    sprintf(data, "%sG%d/%7f/%7f/%.1f/%3f", data, millis(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps());
   }
 
   if (bno08x.getSensorEvent(&sensorValue)) {
@@ -203,49 +240,60 @@ void logging(){
         break;
     }
   }
+  logSend();
 
-  // データの送信
-  char *datap = data;
-  String result;
-  datap += 5;
-  do{
-    // PCSerial.println(datap-5);
-    if(digitalRead(IM920_BUSY) == LOW){
-      IM920Serial.println(datap-5);
-      result = IM920Serial.readStringUntil('\n');
-      if(result == "NG\r"){
-        // DEBUG_PRINTLN("NG");
-        continue;
-        ///// mugennru-pu
-      } else if(result == "OK\r") {
-        
-      } else {
-        FlightStatus = Ready;
-        close();
-        return;
-      }
-      *(datap+26) = 'T';
-      *(datap+27) = 'X';
-      *(datap+28) = 'D';
-      *(datap+29) = 'A';
-      *(datap+30) = ' ';
-      datap += 31;
-    }
-  } while(*datap != '\0');
-  // delay(10);
-
-  // Redirect from PCSerial to IM920sL
-  // while(PCSerial.available()){
-  //   if(digitalRead(IM920_BUSY) == LOW){
-  //     IM920Serial.println(PCSerial.readStringUntil('\r'));
-  //     DEBUG_PRINTLN();
-  //   }
-  // }
-  // while(IM920Serial.available()){
-  //   DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
-  // }
   if(IM920Serial.available()){
     close();
+  }
+}
+
+void loggingSlow(){
+  while (GpsSerial.available() > 0) {
+    gps.encode(GpsSerial.read());
+  }
+  
+  if (bno08x.wasReset()) {
+    setReports();
+  }
+  
+  if (bno08x.getSensorEvent(&sensorValue)) {
+    switch (sensorValue.sensorId) {
+      case SH2_ROTATION_VECTOR:
+        rotattionVector.real = sensorValue.un.rotationVector.real;
+        rotattionVector.i = sensorValue.un.rotationVector.i;
+        rotattionVector.j = sensorValue.un.rotationVector.j;
+        rotattionVector.k =  sensorValue.un.rotationVector.k;
+        
+      case SH2_ACCELEROMETER:
+      accelerometer.x = sensorValue.un.accelerometer.x;
+      accelerometer.y = sensorValue.un.accelerometer.y;
+      accelerometer.z = sensorValue.un.accelerometer.z;
+    }
+  }
+
+  if(millis() - lastPushTime > 60000){
+    switch((millis() / 60000) % 4){
+    case 0:
+      if(gps.location.isUpdated()){
+        sprintf(data, "%sG%d/%7f/%7f/%.1f/%3f", data, millis(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps());
+      }
+      break;
+    case 1:
+      sprintf(data, "%sR%d/%6f/%6f/%6f/%6f", data, millis(), sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
+      quaternionToEuler(sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
+      break;
+    case 2:
+      sprintf(data, "%sA%d/%6f/%6f/%6f", data, millis(), sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
+      break;
+    case 3:
+      // タイムスタンプの更新
+      if (gps.time.isUpdated()) {
+        sprintf(data, "%sT%d/%d:%d:%d.%d", millis(), gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
+      }
+      break;
+    }
+    
+    logSend();
   }
 }
 
