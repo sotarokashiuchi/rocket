@@ -93,6 +93,17 @@ void setup() {
   pinMode(IM920_BUSY, INPUT);
   IM920Serial.begin(115200);
 
+  // Redirect from PCSerial to IM920sL
+  // while(PCSerial.available()){
+  //   if(digitalRead(IM920_BUSY) == LOW){
+  //     IM920Serial.println(PCSerial.readStringUntil('\r'));
+  //     DEBUG_PRINTLN();
+  //   }
+  // }
+  // while(IM920Serial.available()){
+  //   DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
+  // }
+
   // PinMode setting
   pinMode(LED_BLUE, OUTPUT);
   analogSetAttenuation(ADC_0db);
@@ -242,9 +253,9 @@ void loggingFast(){
   }
   logSend();
 
-  if(IM920Serial.available()){
-    close();
-  }
+  // if(IM920Serial.available()){
+  //   close();
+  // }
 }
 
 void loggingSlow(){
