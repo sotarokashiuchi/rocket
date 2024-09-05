@@ -169,10 +169,14 @@ void loop() {
   for(int i=0, j=0; 1; i++, j++){
     if(buf.length() == j){
       do{
-        // buf = IM920Serial.readStringUntil('\n');
-        buf = PCSerial.readStringUntil('\r');
+        buf = IM920Serial.readStringUntil('\n');
+        buf = buf.substring(12);
+        // buf = PCSerial.readStringUntil('\r');
       }while(buf.length() <= 0);
       j=0;
+    }
+    if(buf[j] == '\r' || buf[j] == '\n'){
+      continue;
     }
     if(buf[j] == 'T' || buf[j] == 'R' || buf[j] == 'G' || buf[j] == 'A'){
       if(i!=0){
@@ -201,11 +205,10 @@ void loop() {
       break;
 		case 'R':
 			line = line.substring(1);
-      pareInt(&rotation_msg.time);
+      pareDouble(&rotation_msg.w);
       pareDouble(&rotation_msg.x);
       pareDouble(&rotation_msg.y);
       pareDouble(&rotation_msg.z);
-      pareDouble(&rotation_msg.w);
       RCSOFTCHECK(rcl_publish(&rotation_publisher, &rotation_msg, NULL));
       break;
 		case 'G':

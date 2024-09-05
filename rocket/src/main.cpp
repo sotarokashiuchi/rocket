@@ -29,6 +29,7 @@
 
 #define T1 3290
 #define T2 9740
+#define SleepTime 60000
 
 #define LED_BLUE 0
 #define IM920_BUSY 18
@@ -64,7 +65,7 @@ void displayInfo();
 void flightpin();
 void quaternionToEuler(float qr, float qi, float qj, float qk);
 
-char data[32*8+5] = {0};
+char data[32*8+5] = {'T', 'X', 'D', 'A', ' ', 0};
 char timestanp[16] = "";
 int FlightStatus = Ready;
 volatile int FlightPinCount;
@@ -94,14 +95,16 @@ void setup() {
   IM920Serial.begin(115200);
 
   // Redirect from PCSerial to IM920sL
-  // while(PCSerial.available()){
-  //   if(digitalRead(IM920_BUSY) == LOW){
-  //     IM920Serial.println(PCSerial.readStringUntil('\r'));
-  //     DEBUG_PRINTLN();
+  // for(;;){
+  //   while(PCSerial.available()){
+  //     if(digitalRead(IM920_BUSY) == LOW){
+  //       IM920Serial.println(PCSerial.readStringUntil('\r'));
+  //       DEBUG_PRINTLN();
+  //     }
   //   }
-  // }
-  // while(IM920Serial.available()){
-  //   DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
+  //   while(IM920Serial.available()){
+  //     DEBUG_PRINTLN(IM920Serial.readStringUntil('\n'));
+  //   }
   // }
 
   // PinMode setting
@@ -112,9 +115,9 @@ void setup() {
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
   pinMode(PWMA, OUTPUT);
-  ledcSetup(PWMCH, 7812.5, 8);
-  ledcAttachPin(PWMA, PWMCH);
-  ledcWrite(PWMCH, 128);
+  // ledcSetup(PWMCH, 7812.5, 8);
+  // ledcAttachPin(PWMA, PWMCH);
+  // ledcWrite(PWMCH, 128);
 
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, LOW);
@@ -178,6 +181,7 @@ void loop() {
           loggingFast();
         }
       }
+      loggingFast();
       break;
     case Parachute:
       loggingFast();
@@ -237,17 +241,17 @@ void loggingFast(){
   }
 
   if(gps.location.isUpdated()){
-    sprintf(data, "%sG%d/%7f/%7f/%.1f/%3f", data, millis(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps());
+    sprintf(data, "%sG%7f/%7f/%.1f", data, gps.location.lat(), gps.location.lng(), gps.altitude.meters());
   }
 
   if (bno08x.getSensorEvent(&sensorValue)) {
     switch (sensorValue.sensorId) {
       case SH2_ROTATION_VECTOR:
-        sprintf(data, "%sR%d/%6f/%6f/%6f/%6f", data, millis(), sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
+        sprintf(data, "%sR%.4f/%.4f/%.4f/%.4f", data, sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
         quaternionToEuler(sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
         break;
       case SH2_ACCELEROMETER:
-        sprintf(data, "%sA%d/%6f/%6f/%6f", data, millis(), sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
+        sprintf(data, "%sA%d/%.4f/%.4f/%.4f", data, millis(), sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
         break;
     }
   }
@@ -274,36 +278,37 @@ void loggingSlow(){
         rotattionVector.i = sensorValue.un.rotationVector.i;
         rotattionVector.j = sensorValue.un.rotationVector.j;
         rotattionVector.k =  sensorValue.un.rotationVector.k;
+        break;
         
       case SH2_ACCELEROMETER:
-      accelerometer.x = sensorValue.un.accelerometer.x;
-      accelerometer.y = sensorValue.un.accelerometer.y;
-      accelerometer.z = sensorValue.un.accelerometer.z;
+        accelerometer.x = sensorValue.un.accelerometer.x;
+        accelerometer.y = sensorValue.un.accelerometer.y;
+        accelerometer.z = sensorValue.un.accelerometer.z;
+        break;
     }
   }
 
-  if(millis() - lastPushTime > 60000){
-    switch((millis() / 60000) % 4){
+  if(millis() - lastPushTime > SleepTime){
+    switch((millis() / SleepTime) % 4){
     case 0:
       if(gps.location.isUpdated()){
-        sprintf(data, "%sG%d/%7f/%7f/%.1f/%3f", data, millis(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), gps.speed.mps());
+        sprintf(data, "%sG%7f/%7f/%.1f", data, gps.location.lat(), gps.location.lng(), gps.altitude.meters());
       }
       break;
     case 1:
-      sprintf(data, "%sR%d/%6f/%6f/%6f/%6f", data, millis(), sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
-      quaternionToEuler(sensorValue.un.rotationVector.real, sensorValue.un.rotationVector.i, sensorValue.un.rotationVector.j, sensorValue.un.rotationVector.k);
+      sprintf(data, "%sR%.4f/%.4f/%.4f/%.4f", data, rotattionVector.real, rotattionVector.i, rotattionVector.j, rotattionVector.k);
+      quaternionToEuler(rotattionVector.real, rotattionVector.i, rotattionVector.j, rotattionVector.k);
       break;
     case 2:
-      sprintf(data, "%sA%d/%6f/%6f/%6f", data, millis(), sensorValue.un.accelerometer.x, sensorValue.un.accelerometer.y, sensorValue.un.accelerometer.z);
+      sprintf(data, "%sA%d/%.4f/%.4f/%.4f", data, millis(), accelerometer.x, accelerometer.y, accelerometer.z);
       break;
     case 3:
       // タイムスタンプの更新
       if (gps.time.isUpdated()) {
-        sprintf(data, "%sT%d/%d:%d:%d.%d", millis(), gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
+        sprintf(data, "%sT%d/%d:%d:%d.%d", data, millis(), gps.time.hour(), gps.time.minute(), gps.time.second(), gps.time.centisecond());
       }
       break;
     }
-    
     logSend();
   }
 }
@@ -312,8 +317,8 @@ void release(){
   DEBUG_PRINTLN("RELEASE");
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
-  analogWrite(PWMA, 50);
-  delay(2500);
+  analogWrite(PWMA, 255);
+  delay(6000);
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, LOW);
   return;
@@ -341,7 +346,7 @@ void IRAM_ATTR flightpin(){
 }
 
 void setReports() {
-  if (!bno08x.enableReport(SH2_ROTATION_VECTOR), 500) {
+  if (!bno08x.enableReport(SH2_ROTATION_VECTOR), 100) {
     DEBUG_PRINTLN("Could not enable quaternion report");
   }
   if (!bno08x.enableReport(SH2_ACCELEROMETER), 500) {
