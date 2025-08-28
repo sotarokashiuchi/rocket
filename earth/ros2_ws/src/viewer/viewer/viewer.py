@@ -34,7 +34,6 @@ class ViewerNode(Node):
         pose_msg.pose.orientation.w = Rotation_msg.w
 
         self.publisher.publish(pose_msg)
-        self.get_logger().info("Pose")
 
 def main(args=None):
     rclpy.init(args=args)

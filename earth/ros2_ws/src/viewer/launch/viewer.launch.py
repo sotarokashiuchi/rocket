@@ -12,12 +12,18 @@ def generate_launch_description():
             arguments=[
                 "/gps_topic/altitude",
                 "/gps_topic/speed",
+                "/accelerometer_topic/x",
                 "/accelerometer_topic/y",
+                "/accelerometer_topic/z",
             ]
         ),
         Node(
             package="viewer",
             executable="viewer",
+        ),
+        ExecuteProcess(
+            cmd=['ros2', 'topic', 'echo', '/gps_topic'],
+            output='screen',
         ),
         Node(
             package="rqt_graph",
