@@ -29,14 +29,14 @@
 
 #define T1 3290
 #define T2 9740
-#define SleepTime 60000
+#define SleepTime 10000
 
 #define LED_BLUE 0
 #define IM920_BUSY 18
 #define FLIGHTPIN 23
 #define STBY 12
-#define AIN1 27
-#define AIN2 26
+#define AIN1 26
+#define AIN2 27
 // 0,1,3,14,15,34,35,36,39は使用しないほうが良い
 #define PWMA 25
 #define PWMCH 0
@@ -142,6 +142,9 @@ void setup() {
 }
 
 void loop() {
+  while(1){
+    loggingFast();
+  }
   switch(FlightStatus){
     case Ready:
       if(digitalRead(FLIGHTPIN) == HIGH){
@@ -203,6 +206,8 @@ void logSend(){
       if(result == "NG\r"){
         DEBUG_PRINTLN("NG");
         if(millis() - lastPushTime > 300){
+          memset(data, 0, sizeof(data));
+          sprintf(data, "%s", "TXDA ");
           break;
         } else {
           continue;
@@ -240,9 +245,9 @@ void loggingFast(){
     setReports();
   }
 
-  if(gps.location.isUpdated()){
-    sprintf(data, "%sG%7f/%7f/%.1f", data, gps.location.lat(), gps.location.lng(), gps.altitude.meters());
-  }
+  // if(gps.location.isUpdated()){
+  //   sprintf(data, "%sG%7f/%7f/%.1f", data, gps.location.lat(), gps.location.lng(), gps.altitude.meters());
+  // }
 
   if (bno08x.getSensorEvent(&sensorValue)) {
     switch (sensorValue.sensorId) {
@@ -298,6 +303,7 @@ void loggingSlow(){
     case 1:
       sprintf(data, "%sR%.4f/%.4f/%.4f/%.4f", data, rotattionVector.real, rotattionVector.i, rotattionVector.j, rotattionVector.k);
       quaternionToEuler(rotattionVector.real, rotattionVector.i, rotattionVector.j, rotattionVector.k);
+      DEBUG_PRINTLN(data);
       break;
     case 2:
       sprintf(data, "%sA%d/%.4f/%.4f/%.4f", data, millis(), accelerometer.x, accelerometer.y, accelerometer.z);
@@ -317,7 +323,7 @@ void release(){
   DEBUG_PRINTLN("RELEASE");
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
-  analogWrite(PWMA, 255);
+  analogWrite(PWMA, 125);
   delay(6000);
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, LOW);
