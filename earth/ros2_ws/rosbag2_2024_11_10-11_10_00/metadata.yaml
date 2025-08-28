@@ -1,0 +1,63 @@
+rosbag2_bagfile_information:
+  version: 7
+  storage_identifier: mcap
+  duration:
+    nanoseconds: 12079986907479
+  starting_time:
+    nanoseconds_since_epoch: 1731204606149623821
+  message_count: 30672
+  topics_with_message_count:
+    - topic_metadata:
+        name: /accelerometer_topic
+        type: custom_message/msg/Accelerometer
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+        type_description_hash: ""
+      message_count: 26109
+    - topic_metadata:
+        name: /rotation_topic
+        type: custom_message/msg/Rotation
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+        type_description_hash: ""
+      message_count: 4563
+    - topic_metadata:
+        name: /gps_topic
+        type: custom_message/msg/Gps
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+        type_description_hash: ""
+      message_count: 0
+    - topic_metadata:
+        name: /time_topic
+        type: custom_message/msg/Time
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+        type_description_hash: ""
+      message_count: 0
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - rosbag2_2024_11_10-11_10_00_0.mcap
+    - rosbag2_2024_11_10-11_10_00_1.mcap
+    - rosbag2_2024_11_10-11_10_00_2.mcap
+  files:
+    - path: rosbag2_2024_11_10-11_10_00_0.mcap
+      starting_time:
+        nanoseconds_since_epoch: 1731204606149623821
+      duration:
+        nanoseconds: 4652109329845
+      message_count: 11534
+    - path: rosbag2_2024_11_10-11_10_00_1.mcap
+      starting_time:
+        nanoseconds_since_epoch: 1731209258705348927
+      duration:
+        nanoseconds: 4479729805751
+      message_count: 11547
+    - path: rosbag2_2024_11_10-11_10_00_2.mcap
+      starting_time:
+        nanoseconds_since_epoch: 1731213738636243542
+      duration:
+        nanoseconds: 2947500287758
+      message_count: 7591
+  custom_data: ~

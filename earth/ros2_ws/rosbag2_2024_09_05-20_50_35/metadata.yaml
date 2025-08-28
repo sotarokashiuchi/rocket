@@ -1,0 +1,49 @@
+rosbag2_bagfile_information:
+  version: 7
+  storage_identifier: mcap
+  duration:
+    nanoseconds: 359987858523
+  starting_time:
+    nanoseconds_since_epoch: 1725537086390552900
+  message_count: 5
+  topics_with_message_count:
+    - topic_metadata:
+        name: /accelerometer_topic
+        type: custom_message/msg/Accelerometer
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+        type_description_hash: RIHS01_acfee66b7a60bf73af72a5550079a35b71178c25819d43bc82b085e9b7eec447
+      message_count: 2
+    - topic_metadata:
+        name: /rotation_topic
+        type: custom_message/msg/Rotation
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+        type_description_hash: RIHS01_71596f5ee0a058a71ca87ff807dbcbccc510cdad7b65fb3187d1913287b2881a
+      message_count: 1
+    - topic_metadata:
+        name: /gps_topic
+        type: custom_message/msg/Gps
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+        type_description_hash: RIHS01_0390b5f809cf2ba60073ac0eb18353171b0e9ad4ae31d008b28aaf8f7826195c
+      message_count: 0
+    - topic_metadata:
+        name: /time_topic
+        type: custom_message/msg/Time
+        serialization_format: cdr
+        offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
+        type_description_hash: RIHS01_847c91db2e3694be84994683039c4624fe3a3e7012b652b65affcbf8353af08b
+      message_count: 2
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - rosbag2_2024_09_05-20_50_35_0.mcap
+  files:
+    - path: rosbag2_2024_09_05-20_50_35_0.mcap
+      starting_time:
+        nanoseconds_since_epoch: 1725537086390552900
+      duration:
+        nanoseconds: 359987858523
+      message_count: 5
+  custom_data: ~
